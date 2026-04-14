@@ -21,7 +21,7 @@ TEMPLATE_DIR = BASE_DIR / "templates"
 
 DEFAULT_DB_URI = os.getenv(
     "AI_SQL_DB_URI",
-    "mysql+mysqlconnector://root:Realign1234!@localhost:3306/onehorizon_test_db2",
+    "mysql+mysqlconnector://root:******@localhost:3306/testdb",
 )
 GEMINI_API_KEY = "AIzaSyCuCChK-SzNOP7p55VwsLUdaTYZarjAtQc"  # os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
