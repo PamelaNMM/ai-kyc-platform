@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI KYC Query Assistant</title>
+  <style>
+    :root {
+      --bg: #f8f5ef;
+      --panel: rgba(255, 252, 246, 0.84);
+      --panel-strong: rgba(255, 255, 255, 0.92);
+      --ink: #16212b;
+      --muted: #697987;
+      --accent: #169c8f;
+      --border: rgba(22, 33, 43, 0.12);
+      --warn: #bc3d3d;
+      --shadow: 0 24px 60px rgba(95, 112, 129, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top, rgba(22, 156, 143, 0.12), transparent 24%),
+        radial-gradient(circle at 85% 15%, rgba(228, 183, 89, 0.18), transparent 20%),
+        linear-gradient(160deg, #faf7f1 0%, #f4efe7 52%, #efe8de 100%);
+    }
+
+    .shell {
+      width: min(920px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 56px 0 40px;
+    }
+
+    .title-wrap {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 5vw, 4rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 10px auto 0;
+      max-width: 620px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      font-size: 0.92rem;
+    }
+
+    .pill::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255, 252, 246, 0.88), rgba(255, 255, 255, 0.82));
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .ask-area {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 12px;
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .input-wrap {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: end;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      border: 1px solid rgba(22, 33, 43, 0.12);
+      border-radius: 22px;
+      padding: 18px 20px;
+      font: inherit;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.92);
+      outline: none;
+    }
+
+    button {
+      border: 0;
+      border-radius: 18px;
+      padding: 16px 22px;
+      min-width: 132px;
+      font: inherit;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--accent) 0%, #3ec2b2 100%);
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    .suggestions {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .suggestion-chip {
+      border: 1px solid rgba(22, 156, 143, 0.16);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font: inherit;
+      font-size: 0.93rem;
+      line-height: 1.35;
+      cursor: pointer;
+      min-width: 0;
+    }
+
+    .result {
+      min-height: 360px;
+      padding: 28px 24px 30px;
+    }
+
+    .response-title {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .response-box {
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at top left, rgba(22, 156, 143, 0.08), transparent 32%), var(--panel-strong);
+      border-radius: 22px;
+      padding: 22px;
+    }
+
+    .response-box h2 {
+      margin: 0 0 12px;
+      font-size: 1.4rem;
+    }
+
+    .response-box p,
+    .response-box li {
+      color: #24323d;
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+
+    .dashboard {
+      margin-top: 22px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric-card,
+    .insight-card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.78);
+      padding: 18px;
+    }
+
+    .metric-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .metric-subtext {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .insight-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 14px;
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      gap: 7px;
+    }
+
+    .bar-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(22, 156, 143, 0.1);
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #8ad8cf 0%, var(--accent) 100%);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .error {
+      color: var(--warn);
+      font-weight: 700;
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100vw - 24px, 920px);
+        padding-top: 32px;
+      }
+
+      .input-wrap,
+      .dashboard-grid,
+      .insight-grid {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="title-wrap">
+      <h1>AI KYC Query Assistant</h1>
+      <p class="subtitle">Ask a compliance question and get a final response generated from Gemini and your database.</p>
+    </section>
+
+    <section class="status-row">
+      <div class="pill" id="geminiStatus">Checking Gemini connection</div>
+      <div class="pill" id="dbStatus">Checking database connection</div>
+    </section>
+
+    <section class="card">
+      <div class="ask-area">
+        <label for="question">Question</label>
+        <div class="input-wrap">
+          <textarea id="question" placeholder="Ask a KYC or risk question..."></textarea>
+          <button id="runButton">Ask</button>
+        </div>
+        <div class="suggestions">
+          <button class="suggestion-chip" type="button">Show all high-risk clients and summarize the main risk reasons.</button>
+          <button class="suggestion-chip" type="button">Which CRA reviews are due soon and what follow-up is needed?</button>
+          <button class="suggestion-chip" type="button">List entities with upcoming compliance deadlines and give me a short risk report.</button>
+          <button class="suggestion-chip" type="button">Which clients are missing KYC or CDD information?</button>
+        </div>
+      </div>
+
+      <div class="result" id="resultPanel">
+        <div class="response-title">Final Response</div>
+        <div class="response-box">
+          <p class="muted">The final answer to your question will appear here.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const questionInput = document.getElementById("question");
+    const runButton = document.getElementById("runButton");
+    const resultPanel = document.getElementById("resultPanel");
+    const geminiStatus = document.getElementById("geminiStatus");
+    const dbStatus = document.getElementById("dbStatus");
+    const suggestions = document.querySelectorAll(".suggestion-chip");
+
+    function setStatus(el, ok, label) {
+      el.textContent = label;
+      el.style.background = ok ? "rgba(255, 255, 255, 0.72)" : "rgba(188, 61, 61, 0.12)";
+      el.style.color = ok ? "var(--ink)" : "var(--warn)";
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function renderError(message) {
+      resultPanel.innerHTML = `
+        <div class="response-title">Final Response</div>
+        <div class="response-box">
+          <p class="error">${escapeHtml(message)}</p>
+        </div>
+      `;
+    }
+
+    function getTopColumns(rows) {
+      if (!rows || !rows.length) return [];
+
+      const textColumns = {};
+      rows.forEach(row => {
+        Object.entries(row).forEach(([key, value]) => {
+          if (value !== null && value !== undefined && typeof value !== "number" && String(value).trim()) {
+            textColumns[key] = textColumns[key] || {};
+            const label = String(value);
+            textColumns[key][label] = (textColumns[key][label] || 0) + 1;
+          }
+        });
+      });
+
+      return Object.entries(textColumns)
+        .map(([column, counts]) => {
+          const topEntry = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+          return {
+            label: column,
+            value: topEntry ? `${topEntry[0]} (${topEntry[1]})` : "N/A",
+            score: topEntry ? topEntry[1] : 0
+          };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+    }
+
+    function renderDashboard(data) {
+      const rowCount = Number(data.row_count || 0);
+      const findingsCount = (data.report.key_findings || []).length;
+      const flagsCount = (data.report.risk_flags || []).length;
+      const assumptionsCount = (data.assumptions || []).length;
+      const bars = [
+        { label: "Returned Rows", value: rowCount, percent: Math.min(100, rowCount) },
+        { label: "Key Findings", value: findingsCount, percent: Math.min(100, findingsCount * 20) },
+        { label: "Risk Flags", value: flagsCount, percent: Math.min(100, flagsCount * 25) }
+      ];
+      const topColumns = getTopColumns(data.rows || []);
+
+      return `
+        <div class="dashboard">
+          <div class="response-title">Dashboard View</div>
+          <div class="dashboard-grid">
+            <div class="metric-card">
+              <div class="metric-label">Records Reviewed</div>
+              <div class="metric-value">${escapeHtml(String(rowCount))}</div>
+              <div class="metric-subtext">Rows returned from the query.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Key Findings</div>
+              <div class="metric-value">${escapeHtml(String(findingsCount))}</div>
+              <div class="metric-subtext">Highlights extracted by Gemini.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Risk Flags</div>
+              <div class="metric-value">${escapeHtml(String(flagsCount))}</div>
+              <div class="metric-subtext">Potential issues identified in the response.</div>
+            </div>
+          </div>
+
+          <div class="insight-grid">
+            <div class="insight-card">
+              <div class="metric-label">Activity Snapshot</div>
+              <div class="bar-list">
+                ${bars.map(bar => `
+                  <div class="bar-row">
+                    <div class="bar-meta">
+                      <span>${escapeHtml(bar.label)}</span>
+                      <span>${escapeHtml(String(bar.value))}</span>
+                    </div>
+                    <div class="bar-track">
+                      <div class="bar-fill" style="width: ${bar.percent}%;"></div>
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+
+            <div class="insight-card">
+              <div class="metric-label">Context Summary</div>
+              <p class="metric-subtext">Assumptions used: ${escapeHtml(String(assumptionsCount))}</p>
+              ${topColumns.length
+                ? `<ul>${topColumns.map(item => `<li>${escapeHtml(item.label)}: ${escapeHtml(item.value)}</li>`).join("")}</ul>`
+                : `<p class="metric-subtext">No additional row patterns were available.</p>`}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderResult(data) {
+      const findings = data.report.key_findings || [];
+      const nextSteps = data.report.recommended_next_steps || [];
+      const bullets = [...findings, ...nextSteps].slice(0, 6);
+
+      resultPanel.innerHTML = `
+        <div class="response-title">Final Response</div>
+        <div class="response-box">
+          <h2>${escapeHtml(data.report.headline || "KYC/Risk Report")}</h2>
+          <p>${escapeHtml(data.report.summary || "")}</p>
+          ${bullets.length ? `<ul>${bullets.map(item => `<li>${escapeHtml(String(item))}</li>`).join("")}</ul>` : ""}
+        </div>
+        ${renderDashboard(data)}
+      `;
+    }
+
+    async function loadStatus() {
+      try {
+        const response = await fetch("/api/status");
+        const data = await response.json();
+        setStatus(geminiStatus, data.gemini_ready, data.gemini_ready ? "Gemini ready" : "Gemini not configured");
+        setStatus(dbStatus, data.database_ready, data.database_ready ? "Database connected" : "Database unavailable");
+      } catch (error) {
+        setStatus(geminiStatus, false, "Status unavailable");
+        setStatus(dbStatus, false, "Status unavailable");
+      }
+    }
+
+    async function runQuestion() {
+      const question = questionInput.value.trim();
+      if (!question) {
+        renderError("Please enter a question first.");
+        return;
+      }
+
+      runButton.disabled = true;
+      runButton.textContent = "Thinking...";
+      resultPanel.innerHTML = `
+        <div class="response-title">Final Response</div>
+        <div class="response-box">
+          <p class="muted">Gemini is preparing your answer from the database.</p>
+        </div>
+      `;
+
+      try {
+        const response = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Request failed.");
+        }
+        renderResult(data);
+      } catch (error) {
+        renderError(error.message || "Something went wrong.");
+      } finally {
+        runButton.disabled = false;
+        runButton.textContent = "Ask";
+      }
+    }
+
+    runButton.addEventListener("click", runQuestion);
+    suggestions.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        questionInput.value = chip.textContent.trim();
+        questionInput.focus();
+      });
+    });
+    questionInput.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        runQuestion();
+      }
+    });
+
+    loadStatus();
+  </script>
+</body>
+</html>
