@@ -121,6 +121,4 @@ Human review is recommended for:
 - sanctions or adverse media integration
 - document analysis workflows
 
-## License
 
-Choose the license that fits your GitHub repo, such as MIT, Apache 2.0, or Proprietary.
