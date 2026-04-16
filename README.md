@@ -121,4 +121,7 @@ Human review is recommended for:
 - sanctions or adverse media integration
 - document analysis workflows
 
+## Images
+  ![KYCAssistant](docs/kycAssistant.png)
+
 
